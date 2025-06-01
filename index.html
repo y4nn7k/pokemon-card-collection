@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Pokémon Karten Sammlung</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <h1>Pokémon Karten Sammlung</h1>
+
+  <div class="top-controls">
+    <label for="pokemon-select">Pokémon wählen:</label>
+    <select id="pokemon-select">
+      <option value="lapras">Lapras</option>
+      <option value="cinderace">Cinderace</option>
+      <option value="dragapult">Dragapult</option>
+      <option value="mismagius">Mismagius</option>
+	  <option value="mimikyu">Mimikyu</option>
+    </select>
+
+    <select id="filter-select">
+      <option value="all">Alle anzeigen</option>
+      <option value="owned">Nur Besitz</option>
+      <option value="not-owned">Kein Besitz</option>
+    </select>
+  </div>
+
+  <div id="card-list"></div>
+
+  <script src="script.js"></script>
+</body>
+</html>
