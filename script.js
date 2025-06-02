@@ -1,3 +1,4 @@
+// --- Flaggen-URLs für Sprachzähler ---
 const flagUrls = {
   en: "https://flagcdn.com/gb.svg",
   de: "https://flagcdn.com/de.svg",
@@ -9,13 +10,19 @@ let filterMode = "all";
 let currentPokemon = "lapras";
 let currentUserId = null;
 
+const { getDoc, setDoc, doc } = window.firestoreTools;
+
 document.addEventListener("DOMContentLoaded", () => {
   const loginBtn = document.getElementById("login-btn");
   const userInfo = document.getElementById("user-info");
 
   if (loginBtn) {
     loginBtn.onclick = () => {
-      window.firebase.signInWithPopup(window.firebase.auth, window.firebase.provider).catch(console.error);
+      window.firebase.signInWithPopup(window.firebase.auth, window.firebase.provider).catch(error => {
+        if (error.code !== 'auth/popup-closed-by-user') {
+          console.error("Login-Fehler:", error);
+        }
+      });
     };
   }
 
@@ -38,7 +45,6 @@ async function fetchCards(pokemonName) {
   });
   const data = await res.json();
   allCards = data.data;
-
   allCards.sort((a, b) => new Date(a.set.releaseDate) - new Date(b.set.releaseDate));
   renderCards(allCards);
 }
@@ -58,11 +64,7 @@ function renderCards(cards) {
 
     const wrapper = document.createElement("div");
     wrapper.className = "card-wrapper";
-    if (isOwned && filterMode !== "owned") {
-      wrapper.classList.add("owned");
-    } else {
-      wrapper.classList.remove("owned");
-    }
+    if (isOwned && filterMode !== "owned") wrapper.classList.add("owned");
 
     const img = document.createElement("img");
     img.src = card.images.large;
@@ -76,8 +78,6 @@ function renderCards(cards) {
 
     const buttons = document.createElement("div");
     buttons.className = "language-buttons";
-
-    const languageCounts = JSON.parse(localStorage.getItem(`langCounts_${card.id}`) || '{}');
 
     ["en", "de", "jp"].forEach(lang => {
       const btnWrapper = document.createElement("div");
@@ -99,6 +99,7 @@ function renderCards(cards) {
         count++;
         counter.textContent = count;
         localStorage.setItem(countKey, count);
+        if (currentUserId) saveCollection(currentUserId); // neu: auch Sprachmenge speichern
       };
 
       btn.oncontextmenu = (e) => {
@@ -106,6 +107,7 @@ function renderCards(cards) {
         if (count > 0) count--;
         counter.textContent = count;
         localStorage.setItem(countKey, count);
+        if (currentUserId) saveCollection(currentUserId);
       };
 
       btnWrapper.appendChild(btn);
@@ -119,13 +121,7 @@ function renderCards(cards) {
 
     const cmLink = document.createElement("a");
     const url = card.cardmarket?.url;
-
-    if (url) {
-      cmLink.href = url;
-    } else {
-      cmLink.href = `https://www.cardmarket.com/en/Pokemon/Search?searchString=${encodeURIComponent(card.name)}`;
-    }
-
+    cmLink.href = url || `https://www.cardmarket.com/en/Pokemon/Search?searchString=${encodeURIComponent(card.name)}`;
     cmLink.target = "_blank";
     cmLink.className = "cardmarket-link";
     cmLink.textContent = "Cardmarket";
@@ -136,17 +132,16 @@ function renderCards(cards) {
     section.appendChild(setText);
     section.appendChild(cmLink);
 
-    wrapper.appendChild(checkmark);
-    wrapper.appendChild(img);
-    wrapper.appendChild(section);
-
     img.onclick = () => {
       const owned = localStorage.getItem(card.id) === "true";
       localStorage.setItem(card.id, !owned);
       renderCards(allCards);
-      if (currentUserId) saveCollection(currentUserId); // speichern
+      if (currentUserId) saveCollection(currentUserId);
     };
 
+    wrapper.appendChild(checkmark);
+    wrapper.appendChild(img);
+    wrapper.appendChild(section);
     container.appendChild(wrapper);
   });
 }
@@ -167,22 +162,47 @@ window.onload = () => {
   };
 };
 
+// --- Sammlung in Firestore speichern: Besitz + Sprachmengen ---
 async function saveCollection(userId) {
   const owned = {};
+  const counts = {};
+
   allCards.forEach(card => {
     owned[card.id] = localStorage.getItem(card.id) === "true";
+
+    ["en", "de", "jp"].forEach(lang => {
+      const countKey = `${card.id}_${lang}_count`;
+      const count = parseInt(localStorage.getItem(countKey)) || 0;
+      if (!counts[card.id]) counts[card.id] = {};
+      counts[card.id][lang] = count;
+    });
   });
 
-  await setDoc(doc(db, "collections", userId), { owned });
+  await setDoc(doc(window.db, "collections", userId), {
+    owned,
+    counts
+  });
 }
 
+// --- Sammlung aus Firestore laden: Besitz + Sprachmengen ---
 async function loadCollection(userId) {
-  const snap = await getDoc(doc(db, "collections", userId));
+  const snap = await getDoc(doc(window.db, "collections", userId));
   if (snap.exists()) {
-    const owned = snap.data().owned;
+    const data = snap.data();
+
+    const owned = data.owned || {};
+    const counts = data.counts || {};
+
     for (let id in owned) {
       localStorage.setItem(id, owned[id]);
     }
+
+    for (let id in counts) {
+      for (let lang in counts[id]) {
+        localStorage.setItem(`${id}_${lang}_count`, counts[id][lang]);
+      }
+    }
   }
+
   fetchCards(currentPokemon);
 }
