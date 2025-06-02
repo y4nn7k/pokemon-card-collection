@@ -9,39 +9,6 @@ let filterMode = "all";
 let currentPokemon = "lapras";
 let currentUserId = null;
 
-// --- Firebase SDK initialisieren ---
-import {
-  initializeApp
-} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
-
-import {
-  getAuth,
-  signInWithPopup,
-  GoogleAuthProvider,
-  onAuthStateChanged
-} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
-
-import {
-  getFirestore,
-  doc,
-  setDoc,
-  getDoc
-} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
-
-const firebaseConfig = {
-  apiKey: "AIzaSyBCXLn-FO97eRfxGxywBlPSnbVelJw02jQ",
-  authDomain: "pokemon-card-collection-47235.firebaseapp.com",
-  projectId: "pokemon-card-collection-47235",
-  storageBucket: "pokemon-card-collection-47235.firebasestorage.app",
-  messagingSenderId: "425795175695",
-  appId: "1:425795175695:web:f6daad9f0f2bd56792ea7a"
-};
-
-const app = initializeApp(firebaseConfig);
-const auth = getAuth(app);
-const db = getFirestore(app);
-const provider = new GoogleAuthProvider();
-
 document.addEventListener("DOMContentLoaded", () => {
   const loginBtn = document.getElementById("login-btn");
   const userInfo = document.getElementById("user-info");
