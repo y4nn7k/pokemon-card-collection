@@ -1,3 +1,4 @@
+// Flaggen Symbole
 const flagUrls = {
   en: "https://flagcdn.com/gb.svg",
   de: "https://flagcdn.com/de.svg",
