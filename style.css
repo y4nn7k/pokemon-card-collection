@@ -115,3 +115,27 @@ h1 {
   opacity: 0.4;
 }
 
+#auth-controls {
+  display: flex;
+  gap: 1rem;
+  align-items: center;
+  margin-bottom: 1rem;
+}
+
+#user-info {
+  font-weight: bold;
+}
+
+#login-btn, #logout-btn {
+  padding: 0.5rem 1rem;
+  border: none;
+  background-color: #0077cc;
+  color: white;
+  border-radius: 5px;
+  cursor: pointer;
+}
+
+#login-btn:hover, #logout-btn:hover {
+  background-color: #005fa3;
+}
+
