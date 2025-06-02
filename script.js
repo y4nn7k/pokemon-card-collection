@@ -7,6 +7,63 @@ const flagUrls = {
 let allCards = [];
 let filterMode = "all";
 let currentPokemon = "lapras";
+let currentUserId = null;
+
+// --- Firebase SDK initialisieren ---
+import {
+  initializeApp
+} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+
+import {
+  getAuth,
+  signInWithPopup,
+  GoogleAuthProvider,
+  onAuthStateChanged
+} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+
+import {
+  getFirestore,
+  doc,
+  setDoc,
+  getDoc
+} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+
+const firebaseConfig = {
+  apiKey: "AIzaSyBCXLn-FO97eRfxGxywBlPSnbVelJw02jQ",
+  authDomain: "pokemon-card-collection-47235.firebaseapp.com",
+  projectId: "pokemon-card-collection-47235",
+  storageBucket: "pokemon-card-collection-47235.firebasestorage.app",
+  messagingSenderId: "425795175695",
+  appId: "1:425795175695:web:f6daad9f0f2bd56792ea7a"
+};
+
+const app = initializeApp(firebaseConfig);
+const auth = getAuth(app);
+const db = getFirestore(app);
+const provider = new GoogleAuthProvider();
+
+document.addEventListener("DOMContentLoaded", () => {
+  const loginBtn = document.getElementById("login-btn");
+  const userInfo = document.getElementById("user-info");
+
+  if (loginBtn) {
+    loginBtn.onclick = () => {
+      signInWithPopup(auth, provider).catch(console.error);
+    };
+  }
+
+  onAuthStateChanged(auth, async (user) => {
+    if (user) {
+      currentUserId = user.uid;
+      if (userInfo) userInfo.textContent = `Eingeloggt als: ${user.displayName}`;
+      await loadCollection(currentUserId);
+    } else {
+      currentUserId = null;
+      if (userInfo) userInfo.textContent = "Nicht eingeloggt";
+      fetchCards(currentPokemon);
+    }
+  });
+});
 
 async function fetchCards(pokemonName) {
   const res = await fetch(`https://api.pokemontcg.io/v2/cards?q=name:${pokemonName}`, {
@@ -35,11 +92,10 @@ function renderCards(cards) {
     const wrapper = document.createElement("div");
     wrapper.className = "card-wrapper";
     if (isOwned && filterMode !== "owned") {
-  wrapper.classList.add("owned");
-} else {
-  wrapper.classList.remove("owned");
-}
-
+      wrapper.classList.add("owned");
+    } else {
+      wrapper.classList.remove("owned");
+    }
 
     const img = document.createElement("img");
     img.src = card.images.large;
@@ -100,14 +156,12 @@ function renderCards(cards) {
     if (url) {
       cmLink.href = url;
     } else {
-      // Fallback zur allgemeinen Suche bei fehlendem Direktlink
       cmLink.href = `https://www.cardmarket.com/en/Pokemon/Search?searchString=${encodeURIComponent(card.name)}`;
     }
 
     cmLink.target = "_blank";
     cmLink.className = "cardmarket-link";
     cmLink.textContent = "Cardmarket";
-
 
     const section = document.createElement("div");
     section.className = "card-section";
@@ -119,11 +173,12 @@ function renderCards(cards) {
     wrapper.appendChild(img);
     wrapper.appendChild(section);
 
-img.onclick = () => {
-  const owned = localStorage.getItem(card.id) === "true";
-  localStorage.setItem(card.id, !owned);
-  renderCards(allCards);
-};
+    img.onclick = () => {
+      const owned = localStorage.getItem(card.id) === "true";
+      localStorage.setItem(card.id, !owned);
+      renderCards(allCards);
+      if (currentUserId) saveCollection(currentUserId); // speichern
+    };
 
     container.appendChild(wrapper);
   });
@@ -144,3 +199,23 @@ window.onload = () => {
     renderCards(allCards);
   };
 };
+
+async function saveCollection(userId) {
+  const owned = {};
+  allCards.forEach(card => {
+    owned[card.id] = localStorage.getItem(card.id) === "true";
+  });
+
+  await setDoc(doc(db, "collections", userId), { owned });
+}
+
+async function loadCollection(userId) {
+  const snap = await getDoc(doc(db, "collections", userId));
+  if (snap.exists()) {
+    const owned = snap.data().owned;
+    for (let id in owned) {
+      localStorage.setItem(id, owned[id]);
+    }
+  }
+  fetchCards(currentPokemon);
+}
