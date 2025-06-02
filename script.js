@@ -15,11 +15,11 @@ document.addEventListener("DOMContentLoaded", () => {
 
   if (loginBtn) {
     loginBtn.onclick = () => {
-      signInWithPopup(auth, provider).catch(console.error);
+      window.firebase.signInWithPopup(window.firebase.auth, window.firebase.provider).catch(console.error);
     };
   }
 
-  onAuthStateChanged(auth, async (user) => {
+  window.firebase.onAuthStateChanged(window.firebase.auth, user => {
     if (user) {
       currentUserId = user.uid;
       if (userInfo) userInfo.textContent = `Eingeloggt als: ${user.displayName}`;
