@@ -8,6 +8,9 @@
 </head>
 <body>
   <h1>Pokémon Karten Sammlung</h1>
+  
+  <button id="login-btn">Login mit Google</button>
+  <div id="user-info"></div>
 
   <div class="top-controls">
     <label for="pokemon-select">Pokémon wählen:</label>
@@ -28,6 +31,31 @@
   </div>
 
   <div id="card-list"></div>
+  
+<!-- Firebase SDK -->
+<script type="module">
+  // Importieren der Firebase Bibliotheken
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+  import { getFirestore, doc, setDoc, getDoc } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+
+  // Deine Firebase-Konfiguration
+  const firebaseConfig = {
+    apiKey: "AIzaSyBCXLn-FO97eRfxGxywBlPSnbVelJw02jQ",
+    authDomain: "pokemon-card-collection-47235.firebaseapp.com",
+    projectId: "pokemon-card-collection-47235",
+    storageBucket: "pokemon-card-collection-47235.firebasestorage.app",
+    messagingSenderId: "425795175695",
+    appId: "1:425795175695:web:f6daad9f0f2bd56792ea7a"
+  };
+
+  // Initialisierung
+  const app = initializeApp(firebaseConfig);
+  const db = getFirestore(app);
+
+  // Speichere Firestore als global verfügbar
+  window.db = db;
+  window.firestoreTools = { doc, setDoc, getDoc };
+</script>
 
   <script src="script.js"></script>
 </body>
