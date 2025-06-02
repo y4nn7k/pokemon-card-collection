@@ -19,7 +19,7 @@ document.addEventListener("DOMContentLoaded", () => {
     };
   }
 
-  window.firebase.onAuthStateChanged(window.firebase.auth, user => {
+  window.firebase.onAuthStateChanged(window.firebase.auth, async user => {
     if (user) {
       currentUserId = user.uid;
       if (userInfo) userInfo.textContent = `Eingeloggt als: ${user.displayName}`;
