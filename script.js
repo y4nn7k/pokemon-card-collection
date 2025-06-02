@@ -95,11 +95,19 @@ function renderCards(cards) {
     setText.textContent = `Set: ${card.set.name}`;
 
     const cmLink = document.createElement("a");
-    const setUrl = card.set.name.replace(/ /g, "-");
-    cmLink.href = `https://www.cardmarket.com/en/Pokemon/Products/Singles/${setUrl}?searchString=${encodeURIComponent(card.name)}&idRarity=0&perSite=20`;
+    const url = card.cardmarket?.url;
+
+    if (url) {
+      cmLink.href = url;
+    } else {
+      // Fallback zur allgemeinen Suche bei fehlendem Direktlink
+      cmLink.href = `https://www.cardmarket.com/en/Pokemon/Search?searchString=${encodeURIComponent(card.name)}`;
+    }
+
     cmLink.target = "_blank";
     cmLink.className = "cardmarket-link";
     cmLink.textContent = "Cardmarket";
+
 
     const section = document.createElement("div");
     section.className = "card-section";
