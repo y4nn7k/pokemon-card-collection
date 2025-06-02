@@ -1,4 +1,3 @@
-// --- Flaggen-URLs für Sprachzähler ---
 const flagUrls = {
   en: "https://flagcdn.com/gb.svg",
   de: "https://flagcdn.com/de.svg",
@@ -10,45 +9,57 @@ let filterMode = "all";
 let currentPokemon = "lapras";
 let currentUserId = null;
 
-const { getDoc, setDoc, doc } = window.firestoreTools;
-
 document.addEventListener("DOMContentLoaded", () => {
   const loginBtn = document.getElementById("login-btn");
+  const logoutBtn = document.getElementById("logout-btn");
   const userInfo = document.getElementById("user-info");
 
+  // Login mit Google
   if (loginBtn) {
     loginBtn.onclick = () => {
-      window.firebase.signInWithPopup(window.firebase.auth, window.firebase.provider).catch(error => {
-        if (error.code !== 'auth/popup-closed-by-user') {
-          console.error("Login-Fehler:", error);
-        }
-      });
+      window.firebase.signInWithPopup(window.firebase.auth, window.firebase.provider)
+        .catch(console.error);
     };
   }
 
+  // Logout-Funktion
+  if (logoutBtn) {
+    logoutBtn.onclick = () => {
+      window.firebase.auth.signOut();
+    };
+  }
+
+  // Auth-Zustand überwachen
   window.firebase.onAuthStateChanged(window.firebase.auth, async user => {
     if (user) {
       currentUserId = user.uid;
-      if (userInfo) userInfo.textContent = `Eingeloggt als: ${user.displayName}`;
-      await loadCollection(currentUserId);
+      userInfo.textContent = `Eingeloggt als: ${user.displayName}`;
+      logoutBtn.style.display = "inline-block";
+      loginBtn.style.display = "none";
+      await loadCollection(currentUserId); // lädt gespeicherte Sammlung
     } else {
       currentUserId = null;
-      if (userInfo) userInfo.textContent = "Nicht eingeloggt";
-      fetchCards(currentPokemon);
+      userInfo.textContent = "Nicht eingeloggt";
+      logoutBtn.style.display = "none";
+      loginBtn.style.display = "inline-block";
+      fetchCards(currentPokemon); // lädt Karten ohne gespeicherte Daten
     }
   });
 });
 
+// Holt Karten-Daten vom Pokémon TCG API
 async function fetchCards(pokemonName) {
   const res = await fetch(`https://api.pokemontcg.io/v2/cards?q=name:${pokemonName}`, {
     headers: { "X-Api-Key": "DEIN_API_KEY_HIER" }
   });
   const data = await res.json();
   allCards = data.data;
+
   allCards.sort((a, b) => new Date(a.set.releaseDate) - new Date(b.set.releaseDate));
   renderCards(allCards);
 }
 
+// Zeigt Karten im DOM an
 function renderCards(cards) {
   const container = document.getElementById("card-list");
   container.innerHTML = "";
@@ -99,7 +110,7 @@ function renderCards(cards) {
         count++;
         counter.textContent = count;
         localStorage.setItem(countKey, count);
-        if (currentUserId) saveCollection(currentUserId); // neu: auch Sprachmenge speichern
+        if (currentUserId) saveCollection(currentUserId); // sofort speichern
       };
 
       btn.oncontextmenu = (e) => {
@@ -132,6 +143,10 @@ function renderCards(cards) {
     section.appendChild(setText);
     section.appendChild(cmLink);
 
+    wrapper.appendChild(checkmark);
+    wrapper.appendChild(img);
+    wrapper.appendChild(section);
+
     img.onclick = () => {
       const owned = localStorage.getItem(card.id) === "true";
       localStorage.setItem(card.id, !owned);
@@ -139,13 +154,11 @@ function renderCards(cards) {
       if (currentUserId) saveCollection(currentUserId);
     };
 
-    wrapper.appendChild(checkmark);
-    wrapper.appendChild(img);
-    wrapper.appendChild(section);
     container.appendChild(wrapper);
   });
 }
 
+// Pokémon- und Filterauswahl
 window.onload = () => {
   const selector = document.getElementById("pokemon-select");
   currentPokemon = selector.value;
@@ -162,45 +175,38 @@ window.onload = () => {
   };
 };
 
-// --- Sammlung in Firestore speichern: Besitz + Sprachmengen ---
+// Speichert Besitz- und Sprachdaten in Firestore
 async function saveCollection(userId) {
   const owned = {};
-  const counts = {};
+  const languages = {};
 
   allCards.forEach(card => {
     owned[card.id] = localStorage.getItem(card.id) === "true";
 
     ["en", "de", "jp"].forEach(lang => {
-      const countKey = `${card.id}_${lang}_count`;
-      const count = parseInt(localStorage.getItem(countKey)) || 0;
-      if (!counts[card.id]) counts[card.id] = {};
-      counts[card.id][lang] = count;
+      const key = `${card.id}_${lang}_count`;
+      languages[key] = parseInt(localStorage.getItem(key)) || 0;
     });
   });
 
-  await setDoc(doc(window.db, "collections", userId), {
+  await window.firebase.setDoc(window.firebase.doc(window.firebase.db, "collections", userId), {
     owned,
-    counts
+    languages
   });
 }
 
-// --- Sammlung aus Firestore laden: Besitz + Sprachmengen ---
+// Lädt Besitz- und Sprachdaten aus Firestore
 async function loadCollection(userId) {
-  const snap = await getDoc(doc(window.db, "collections", userId));
+  const snap = await window.firebase.getDoc(window.firebase.doc(window.firebase.db, "collections", userId));
   if (snap.exists()) {
     const data = snap.data();
 
-    const owned = data.owned || {};
-    const counts = data.counts || {};
-
-    for (let id in owned) {
-      localStorage.setItem(id, owned[id]);
+    for (let id in data.owned) {
+      localStorage.setItem(id, data.owned[id]);
     }
 
-    for (let id in counts) {
-      for (let lang in counts[id]) {
-        localStorage.setItem(`${id}_${lang}_count`, counts[id][lang]);
-      }
+    for (let key in data.languages) {
+      localStorage.setItem(key, data.languages[key]);
     }
   }
 
