@@ -50,7 +50,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
 // Holt Karten-Daten vom Pokémon TCG API
 async function fetchCards(pokemonName) {
-  const res = await fetch(`https://api.pokemontcg.io/v2/cards?q=name:${pokemonName}`, {
+  const res = await fetch(`https://corsproxy.io/?https://api.pokemontcg.io/v2/cards?q=name:${pokemonName}`, {
     headers: { "X-Api-Key": "DEIN_API_KEY_HIER" }
   });
   const data = await res.json();
