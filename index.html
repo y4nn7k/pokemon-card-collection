@@ -8,7 +8,7 @@
 </head>
 <body>
   <h1>Pokémon Karten Sammlung</h1>
-
+  
   <div id="auth-controls">
     <button id="login-btn">Login mit Google</button>
     <button id="logout-btn" style="display: none;">Logout</button>
@@ -16,19 +16,16 @@
   </div>
 
   <div class="top-controls">
-    <input type="text" id="pokemon-search" placeholder="Nach Pokémon suchen..." autocomplete="off">
-    <button id="add-all-btn" style="display:none;">Alle Karten zur Sammlung hinzufügen</button>
-    <label for="view-select">Ansicht:</label>
-    <select id="view-select">
-      <option value="collection">Meine Sammlung</option>
-      <option value="all">Gesamte Kollektion</option>
+    <label for="pokemon-select">Pokémon wählen:</label>
+    <select id="pokemon-select">
+      <option value="lapras">Lapras</option>
+      <option value="cinderace">Cinderace</option>
+      <option value="dragapult">Dragapult</option>
+      <option value="mismagius">Mismagius</option>
+      <option value="mimikyu">Mimikyu</option>
+      <option value="reshiram">Reshiram</option>    
     </select>
-    <label for="sort-select">Sortieren nach:</label>
-    <select id="sort-select">
-      <option value="name">Name</option>
-      <option value="set">Set</option>
-    </select>
-    <label for="filter-select">Filter:</label>
+
     <select id="filter-select">
       <option value="all">Alle anzeigen</option>
       <option value="owned">Nur Besitz</option>
@@ -37,39 +34,44 @@
   </div>
 
   <div id="card-list"></div>
+  
+  <!-- Firebase SDKs -->
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+  import { getFirestore, doc, setDoc, getDoc } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+  import { getAuth, signInWithPopup, GoogleAuthProvider, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
 
-  <!-- Firebase SDK -->
-  <script type="module">
-    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
-    import { getFirestore, doc, setDoc, getDoc } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
-    import { getAuth, signInWithPopup, GoogleAuthProvider, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+  const firebaseConfig = {
+    apiKey: "AIzaSyBCXLn-FO97eRfxGxywBlPSnbVelJw02jQ",
+    authDomain: "pokemon-card-collection-47235.firebaseapp.com",
+    projectId: "pokemon-card-collection-47235",
+    storageBucket: "pokemon-card-collection-47235.appspot.com",
+    messagingSenderId: "425795175695",
+    appId: "1:425795175695:web:f6daad9f0f2bd56792ea7a"
+  };
 
-    const firebaseConfig = {
-      apiKey: "AIzaSyBCXLn-FO97eRfxGxywBlPSnbVelJw02jQ",
-      authDomain: "pokemon-card-collection-47235.firebaseapp.com",
-      projectId: "pokemon-card-collection-47235",
-      storageBucket: "pokemon-card-collection-47235.appspot.com",
-      messagingSenderId: "425795175695",
-      appId: "1:425795175695:web:f6daad9f0f2bd56792ea7a"
-    };
+  const app = initializeApp(firebaseConfig);
 
-    const app = initializeApp(firebaseConfig);
-    const db = getFirestore(app);
-    const auth = getAuth(app);
-    const provider = new GoogleAuthProvider();
+  // Initialisiere Dienste
+  const db = getFirestore(app);
+  const auth = getAuth(app);
+  const provider = new GoogleAuthProvider();
 
-    window.firebase = {
-      db,
-      auth,
-      provider,
-      signInWithPopup,
-      onAuthStateChanged,
-      doc,
-      setDoc,
-      getDoc
-    };
-  </script>
+  // Globale Freigabe für script.js
+  window.firebase = {
+    db,
+    auth,
+    provider,
+    signInWithPopup,
+    onAuthStateChanged,
+    doc,
+    setDoc,
+    getDoc
+  };
+</script>
 
+
+  <!-- Dein Hauptscript -->
   <script type="module" src="script.js"></script>
 </body>
 </html>
