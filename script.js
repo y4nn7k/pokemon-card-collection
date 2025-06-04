@@ -1,4 +1,3 @@
-// Flaggen Symbole
 const flagUrls = {
   en: "https://flagcdn.com/gb.svg",
   de: "https://flagcdn.com/de.svg",
@@ -6,65 +5,117 @@ const flagUrls = {
 };
 
 let allCards = [];
+let filteredCards = [];
 let filterMode = "all";
-let currentPokemon = "lapras";
+let sortMode = "name";
+let currentPokemon = "";
 let currentUserId = null;
+let viewMode = "collection";
 
 document.addEventListener("DOMContentLoaded", () => {
   const loginBtn = document.getElementById("login-btn");
   const logoutBtn = document.getElementById("logout-btn");
   const userInfo = document.getElementById("user-info");
 
-  // Login mit Google
+  const viewSelect = document.getElementById("view-select");
+  const sortSelect = document.getElementById("sort-select");
+  const filterSelect = document.getElementById("filter-select");
+  const addAllBtn = document.getElementById("add-all-btn");
+  const searchInput = document.getElementById("pokemon-search");
+
   if (loginBtn) {
     loginBtn.onclick = () => {
-      window.firebase.signInWithPopup(window.firebase.auth, window.firebase.provider)
-        .catch(console.error);
+      window.firebase.signInWithPopup(window.firebase.auth, window.firebase.provider).catch(console.error);
     };
   }
 
-  // Logout-Funktion
   if (logoutBtn) {
     logoutBtn.onclick = () => {
       window.firebase.auth.signOut();
     };
   }
 
-  // Auth-Zustand überwachen
   window.firebase.onAuthStateChanged(window.firebase.auth, async user => {
     if (user) {
       currentUserId = user.uid;
       userInfo.textContent = `Eingeloggt als: ${user.displayName}`;
       logoutBtn.style.display = "inline-block";
       loginBtn.style.display = "none";
-      await loadCollection(currentUserId); // lädt gespeicherte Sammlung
+      await loadCollection(currentUserId);
     } else {
       currentUserId = null;
       userInfo.textContent = "Nicht eingeloggt";
       logoutBtn.style.display = "none";
       loginBtn.style.display = "inline-block";
-      fetchCards(currentPokemon); // lädt Karten ohne gespeicherte Daten
     }
   });
+
+  searchInput.addEventListener("input", debounce(async () => {
+    const value = searchInput.value.trim().toLowerCase();
+    if (!value) return;
+    currentPokemon = value;
+    await fetchCards(currentPokemon);
+  }, 400));
+
+  filterSelect.onchange = e => {
+    filterMode = e.target.value;
+    renderCards(filteredCards);
+  };
+
+  sortSelect.onchange = e => {
+    sortMode = e.target.value;
+    renderCards(filteredCards);
+  };
+
+  viewSelect.onchange = e => {
+    viewMode = e.target.value;
+    renderCards(filteredCards);
+  };
+
+  addAllBtn.onclick = () => {
+    allCards.forEach(card => {
+      localStorage.setItem(card.id, "true");
+    });
+    if (currentUserId) saveCollection(currentUserId);
+    renderCards(filteredCards);
+  };
 });
 
-// Holt Karten-Daten vom Pokémon TCG API
-async function fetchCards(pokemonName) {
-const res = await fetch(`https://poki-api-proxy.luhter12345.workers.dev?pokemon=${pokemonName}`);
-  const data = await res.json();
-  allCards = data.data;
-
-  allCards.sort((a, b) => new Date(a.set.releaseDate) - new Date(b.set.releaseDate));
-  renderCards(allCards);
+// Debounce für Suche
+function debounce(func, delay) {
+  let timer;
+  return function () {
+    clearTimeout(timer);
+    timer = setTimeout(func, delay);
+  };
 }
 
-// Zeigt Karten im DOM an
+// Karten vom API holen
+async function fetchCards(pokemonName) {
+  const res = await fetch(`https://poki-api-proxy.luhter12345.workers.dev?pokemon=${pokemonName}`);
+  const data = await res.json();
+  allCards = data.data || [];
+  filteredCards = [...allCards];
+
+  addAllBtn.style.display = allCards.length > 0 ? "inline-block" : "none";
+  renderCards(filteredCards);
+}
+
+// Render-Funktion
 function renderCards(cards) {
   const container = document.getElementById("card-list");
   container.innerHTML = "";
 
+  // Sortierung anwenden
+  cards.sort((a, b) => {
+    if (sortMode === "name") return a.name.localeCompare(b.name);
+    if (sortMode === "set") return a.set.name.localeCompare(b.set.name);
+    return 0;
+  });
+
   cards.forEach(card => {
     const isOwned = localStorage.getItem(card.id) === "true";
+
     const shouldShow =
       filterMode === "all" ||
       (filterMode === "owned" && isOwned) ||
@@ -72,9 +123,11 @@ function renderCards(cards) {
 
     if (!shouldShow) return;
 
+    if (viewMode === "collection" && !isOwned) return;
+
     const wrapper = document.createElement("div");
     wrapper.className = "card-wrapper";
-    if (isOwned && filterMode !== "owned") wrapper.classList.add("owned");
+    if (isOwned) wrapper.classList.add("owned");
 
     const img = document.createElement("img");
     img.src = card.images.large;
@@ -83,8 +136,8 @@ function renderCards(cards) {
 
     const checkmark = document.createElement("div");
     checkmark.className = "checkmark";
-    checkmark.textContent = "✔";
-    if (isOwned) checkmark.classList.add("visible");
+    checkmark.textContent = "+";
+    checkmark.classList.add("visible");
 
     const buttons = document.createElement("div");
     buttons.className = "language-buttons";
@@ -109,7 +162,7 @@ function renderCards(cards) {
         count++;
         counter.textContent = count;
         localStorage.setItem(countKey, count);
-        if (currentUserId) saveCollection(currentUserId); // sofort speichern
+        if (currentUserId) saveCollection(currentUserId);
       };
 
       btn.oncontextmenu = (e) => {
@@ -146,42 +199,24 @@ function renderCards(cards) {
     wrapper.appendChild(img);
     wrapper.appendChild(section);
 
-    img.onclick = () => {
+    wrapper.onclick = () => {
       const owned = localStorage.getItem(card.id) === "true";
       localStorage.setItem(card.id, !owned);
-      renderCards(allCards);
       if (currentUserId) saveCollection(currentUserId);
+      renderCards(filteredCards);
     };
 
     container.appendChild(wrapper);
   });
 }
 
-// Pokémon- und Filterauswahl
-window.onload = () => {
-  const selector = document.getElementById("pokemon-select");
-  currentPokemon = selector.value;
-  fetchCards(currentPokemon);
-
-  selector.onchange = () => {
-    currentPokemon = selector.value;
-    fetchCards(currentPokemon);
-  };
-
-  document.getElementById("filter-select").onchange = (e) => {
-    filterMode = e.target.value;
-    renderCards(allCards);
-  };
-};
-
-// Speichert Besitz- und Sprachdaten in Firestore
+// Speicherung der Sammlung
 async function saveCollection(userId) {
   const owned = {};
   const languages = {};
 
   allCards.forEach(card => {
     owned[card.id] = localStorage.getItem(card.id) === "true";
-
     ["en", "de", "jp"].forEach(lang => {
       const key = `${card.id}_${lang}_count`;
       languages[key] = parseInt(localStorage.getItem(key)) || 0;
@@ -194,20 +229,16 @@ async function saveCollection(userId) {
   });
 }
 
-// Lädt Besitz- und Sprachdaten aus Firestore
+// Laden der Sammlung
 async function loadCollection(userId) {
   const snap = await window.firebase.getDoc(window.firebase.doc(window.firebase.db, "collections", userId));
   if (snap.exists()) {
     const data = snap.data();
-
     for (let id in data.owned) {
       localStorage.setItem(id, data.owned[id]);
     }
-
     for (let key in data.languages) {
       localStorage.setItem(key, data.languages[key]);
     }
   }
-
-  fetchCards(currentPokemon);
 }
