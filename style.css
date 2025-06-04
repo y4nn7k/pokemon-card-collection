@@ -11,19 +11,11 @@ h1 {
   margin-bottom: 12px;
 }
 
-.top-controls {
-  margin-bottom: 20px;
-  display: flex;
-  flex-wrap: wrap;
-  justify-content: center;
-  gap: 10px;
-}
-
-input[type="text"], select, button {
+#filter-select {
   padding: 8px 12px;
-  font-size: 1rem;
+  margin-bottom: 20px;
   border-radius: 8px;
-  border: none;
+  font-size: 1rem;
 }
 
 #card-list {
@@ -135,11 +127,15 @@ input[type="text"], select, button {
 }
 
 #login-btn, #logout-btn {
+  padding: 0.5rem 1rem;
+  border: none;
   background-color: #0077cc;
   color: white;
+  border-radius: 5px;
   cursor: pointer;
 }
 
 #login-btn:hover, #logout-btn:hover {
   background-color: #005fa3;
 }
+
