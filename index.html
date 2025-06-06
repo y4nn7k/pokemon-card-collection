@@ -16,6 +16,14 @@
   </div>
 
   <div class="top-controls">
+
+    <!-- 🆕 Eingabefeld zur Pokémon-Suche mit Autocomplete -->
+    <label for="pokemon-search">Pokémon suchen:</label>
+    <input type="text" id="pokemon-search" placeholder="z. B. Pikachu" autocomplete="off" />
+    <ul id="autocomplete-list" class="autocomplete-items"></ul>
+
+    <!-- 💤 Altes Dropdown auskommentiert -->
+    <!--
     <label for="pokemon-select">Pokémon wählen:</label>
     <select id="pokemon-select">
       <option value="lapras">Lapras</option>
@@ -25,6 +33,7 @@
       <option value="mimikyu">Mimikyu</option>
       <option value="reshiram">Reshiram</option>    
     </select>
+    -->
 
     <select id="filter-select">
       <option value="all">Alle anzeigen</option>
@@ -69,7 +78,6 @@
     getDoc
   };
 </script>
-
 
   <!-- Dein Hauptscript -->
   <script type="module" src="script.js"></script>
