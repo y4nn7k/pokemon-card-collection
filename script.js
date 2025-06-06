@@ -212,58 +212,62 @@ async function loadCollection(userId) {
   fetchCards(currentPokemon);
 }
 
-// 🔽 AUTOCOMPLETE + POKÉMON-SUCHE (NEU AM ENDE)
-const searchInput = document.getElementById('pokemon-search');
-const autocompleteList = document.getElementById('autocomplete-list');
+// 🆕 AUTOCOMPLETE-FUNKTION
+document.addEventListener("DOMContentLoaded", () => {
+  const searchInput = document.getElementById('pokemon-search');
+  const autocompleteList = document.getElementById('autocomplete-list');
 
-let allPokemonNames = [];
+  let allPokemonNames = [];
 
-// 1. Lade alle Pokémon-Namen aus der API (englisch)
-async function loadPokemonNames() {
-  let page = 1;
-  const pageSize = 250;
-  let names = [];
-  let more = true;
+  // Lade alle Pokémon-Namen aus der API (englisch)
+  async function loadPokemonNames() {
+    let page = 1;
+    const pageSize = 250;
+    const nameSet = new Set();
 
-  while (more) {
-    const response = await fetch(`https://api.pokemontcg.io/v2/cards?page=${page}&pageSize=${pageSize}`);
-    const data = await response.json();
-    const newNames = data.data.map(card => card.name);
-    names.push(...newNames);
-    more = data.data.length === pageSize;
-    page++;
+    while (true) {
+      const response = await fetch(`https://api.pokemontcg.io/v2/cards?page=${page}&pageSize=${pageSize}`);
+      const data = await response.json();
+      const names = data.data.map(card => card.name);
+
+      names.forEach(name => nameSet.add(name));
+      if (data.data.length < pageSize) break;
+      page++;
+    }
+
+    allPokemonNames = Array.from(nameSet).sort();
   }
 
-  // Duplikate entfernen
-  allPokemonNames = [...new Set(names)].sort();
-}
-loadPokemonNames();
+  loadPokemonNames();
 
-// 2. Zeige Vorschläge beim Tippen
-searchInput.addEventListener('input', () => {
-  const value = searchInput.value.toLowerCase();
-  autocompleteList.innerHTML = '';
-
-  if (!value) return;
-
-  const suggestions = allPokemonNames.filter(name => name.toLowerCase().startsWith(value)).slice(0, 10);
-
-  suggestions.forEach(suggestion => {
-    const item = document.createElement('li');
-    item.textContent = suggestion;
-    item.classList.add('autocomplete-item');
-    item.addEventListener('click', () => {
-      searchInput.value = suggestion;
-      autocompleteList.innerHTML = '';
-      loadPokemonCards(suggestion); // bestehende Funktion aufrufen
-    });
-    autocompleteList.appendChild(item);
-  });
-});
-
-// 3. Klicke außerhalb: Liste schließen
-document.addEventListener('click', (e) => {
-  if (!autocompleteList.contains(e.target) && e.target !== searchInput) {
+  // Sucheingabe mit Autovervollständigung
+  searchInput.addEventListener('input', () => {
+    const value = searchInput.value.toLowerCase();
     autocompleteList.innerHTML = '';
-  }
+
+    if (!value) return;
+
+    const suggestions = allPokemonNames
+      .filter(name => name.toLowerCase().startsWith(value))
+      .slice(0, 10);
+
+    suggestions.forEach(suggestion => {
+      const item = document.createElement('li');
+      item.textContent = suggestion;
+      item.classList.add('autocomplete-item');
+      item.addEventListener('click', () => {
+        searchInput.value = suggestion;
+        autocompleteList.innerHTML = '';
+        loadPokemonCards(suggestion); // bestehende Kartenladefunktion aufrufen
+      });
+      autocompleteList.appendChild(item);
+    });
+  });
+
+  // Klicke außerhalb → Liste schließen
+  document.addEventListener('click', (e) => {
+    if (!autocompleteList.contains(e.target) && e.target !== searchInput) {
+      autocompleteList.innerHTML = '';
+    }
+  });
 });
