@@ -160,8 +160,19 @@ function renderCards(cards) {
 // Pokémon- und Filterauswahl
 window.onload = () => {
   const selector = document.getElementById("pokemon-select");
-  currentPokemon = selector.value;
-  fetchCards(currentPokemon);
+  const searchField = document.getElementById("pokemon-search");
+
+  if (selector) {
+    currentPokemon = selector.value;
+    fetchCards(currentPokemon);
+  } else if (searchField) {
+    // Wenn Suchfeld existiert, lade NICHT automatisch ein Pokémon (erst bei Benutzereingabe)
+    console.log("Warte auf Nutzereingabe für Autocomplete...");
+  } else {
+    console.warn("Kein Pokémon-Startwert gefunden.");
+  }
+};
+
 
   selector.onchange = () => {
     currentPokemon = selector.value;
