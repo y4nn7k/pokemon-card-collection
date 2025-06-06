@@ -183,7 +183,6 @@ window.onload = () => {
     filterMode = e.target.value;
     renderCards(allCards);
   };
-};
 
 // Speichert Besitz- und Sprachdaten in Firestore
 async function saveCollection(userId) {
